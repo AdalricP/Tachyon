@@ -20,11 +20,13 @@ int main(int argc, char* args[]) {
                                           SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_RESIZABLE);
     if (!window) return 1;
     
-    // Force Dark Mode for Window Title Bar on macOS
+    // Force Dark Mode and Unified Title Bar
     NSWindow *nswindow = (NSWindow *)SDL_GetWindowData(window, "SDL_Window");
     if (nswindow) {
         [nswindow setAppearance:[NSAppearance appearanceNamed:NSAppearanceNameDarkAqua]];
-        [nswindow setTitlebarAppearsTransparent:NO]; 
+        [nswindow setTitlebarAppearsTransparent:YES];
+        [nswindow setTitleVisibility:NSWindowTitleHidden];
+        [nswindow setStyleMask:[nswindow styleMask] | NSWindowStyleMaskFullSizeContentView];
     }
 
     printf("Creating Renderer...\n");
