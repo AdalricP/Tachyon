@@ -1,10 +1,10 @@
 CC = clang
-CFLAGS = -Wall -std=c99 $(shell sdl2-config --cflags)
-LIBS = $(shell sdl2-config --libs)
+CFLAGS = -Wall -std=c11 $(shell sdl2-config --cflags) -I/opt/homebrew/include
+LIBS = $(shell sdl2-config --libs) -L/opt/homebrew/lib -lmupdf -lmupdf-third -lSDL2_ttf -framework Cocoa
 
 BUILD_DIR = build
-TARGET = $(BUILD_DIR)/main
-SRC = src/main.c
+TARGET = $(BUILD_DIR)/Tachyon
+SRC = src/main.m src/window.m src/file.m src/render.m src/physics.m
 
 all: $(TARGET)
 
@@ -17,3 +17,5 @@ run: $(TARGET)
 
 clean:
 	rm -rf $(BUILD_DIR)
+
+play: clean all run
