@@ -3,33 +3,46 @@
 AppState* g_app = NULL;
 
 int main(int argc, char* args[]) {
+    printf("Initializing SDL...\n");
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         printf("SDL Init Error: %s\n", SDL_GetError());
         return 1;
     }
+    printf("Initializing TTF...\n");
     if (TTF_Init() < 0) {
          printf("TTF Init Error: %s\n", TTF_GetError());
          return 1;
     }
     
-    
+    printf("Creating Window...\n");
+    // Create Window
     SDL_Window* window = SDL_CreateWindow("Tachyon", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 
-                                          SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI);
+                                          SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_RESIZABLE);
     if (!window) return 1;
-
     
+    // Force Dark Mode for Window Title Bar on macOS
+    NSWindow *nswindow = (NSWindow *)SDL_GetWindowData(window, "SDL_Window");
+    if (nswindow) {
+        [nswindow setAppearance:[NSAppearance appearanceNamed:NSAppearanceNameDarkAqua]];
+        [nswindow setTitlebarAppearsTransparent:NO]; 
+    }
+
+    printf("Creating Renderer...\n");
+    // Create Accelerated Renderer
     SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     if (!renderer) {
         printf("Renderer Init Error: %s\n", SDL_GetError());
         return 1;
     }
 
+    printf("Setup App State...\n");
     AppState app = {0};
     app.ctx = fz_new_context(NULL, NULL, FZ_STORE_DEFAULT);
     app.renderer = renderer;
     app.zoom = 1.0f;
     
-    
+    printf("Loading Font...\n");
+    // Load System Font
     app.font = TTF_OpenFont("/System/Library/Fonts/Helvetica.ttc", 24);
     if (!app.font) {
          printf("Failed to load font: %s\n", TTF_GetError());
@@ -38,13 +51,15 @@ int main(int argc, char* args[]) {
     fz_register_document_handlers(app.ctx);
     g_app = &app; 
 
-    
+    printf("Init App Delegate...\n");
     init_app_delegate();
+    printf("Setup Menu...\n");
     setup_menu();
     [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
     [NSApp activateIgnoringOtherApps:YES];
 
     if (argc > 1) {
+        printf("Loading Doc...\n");
         load_document(&app, args[1]);
     }
 
@@ -52,8 +67,10 @@ int main(int argc, char* args[]) {
     SDL_Event e;
     app.last_time = SDL_GetTicks();
     
+    printf("First Render...\n");
     render(&app);
 
+    printf("Entering Loop...\n");
     while (!quit) {
         Uint32 current_time = SDL_GetTicks();
         float dt = (current_time - app.last_time) / 1000.0f;
@@ -106,8 +123,8 @@ int main(int argc, char* args[]) {
                 bool cmd = (SDL_GetModState() & KMOD_GUI) != 0;
                 
                 switch(e.key.keysym.sym) {
-                    case SDLK_UP: app.velocity_y += 800.0f; break; 
-                    case SDLK_DOWN: app.velocity_y -= 800.0f; break;
+                    case SDLK_UP: app.velocity_y -= 800.0f; break; 
+                    case SDLK_DOWN: app.velocity_y += 800.0f; break;
                     case SDLK_LEFT: app.velocity_x -= 800.0f; break;
                     case SDLK_RIGHT: app.velocity_x += 800.0f; break;
                     case SDLK_ESCAPE: quit = true; break;

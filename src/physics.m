@@ -151,4 +151,12 @@ void update_physics(AppState* app, float dt) {
         app->overlay_timer -= dt;
         if (app->overlay_timer < 0) app->overlay_timer = 0;
     }
+    
+    // Scrollbar Physics
+    if (fabsf(app->velocity_y) > 0.1f || fabsf(app->velocity_x) > 0.1f) {
+        app->scrollbar_alpha = 1.0f;
+    } else {
+        app->scrollbar_alpha -= 2.0f * dt;
+        if (app->scrollbar_alpha < 0) app->scrollbar_alpha = 0;
+    }
 }

@@ -41,7 +41,7 @@ void load_document(AppState* app, const char* path) {
         app->scroll_x = 0;
         app->velocity_y = 0;
         app->velocity_x = 0;
-        app->zoom = 1.0f;
+        app->zoom = 0.5f;
         app->zoom_velocity = 0;
         
         printf("Opened: %s (%d pages)\n", path, app->page_count);

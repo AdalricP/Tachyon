@@ -4,7 +4,7 @@ LIBS = $(shell sdl2-config --libs) -L/opt/homebrew/lib -lmupdf -lmupdf-third -lS
 
 BUILD_DIR = build
 TARGET = $(BUILD_DIR)/Tachyon
-SRC = src/main.m src/window.m src/file.m src/render.m src/physics.m
+SRC = src/main.m src/window.m src/file.m src/render.m src/physics.m src/scrollbar.m
 
 all: $(TARGET)
 
