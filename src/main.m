@@ -1,4 +1,5 @@
 #include "tachyon.h"
+#include <SDL_syswm.h>
 
 AppState* g_app = NULL;
 
@@ -20,13 +21,33 @@ int main(int argc, char* args[]) {
                                           SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_RESIZABLE);
     if (!window) return 1;
     
-    // Force Dark Mode and Unified Title Bar
-    NSWindow *nswindow = (NSWindow *)SDL_GetWindowData(window, "SDL_Window");
-    if (nswindow) {
-        [nswindow setAppearance:[NSAppearance appearanceNamed:NSAppearanceNameDarkAqua]];
-        [nswindow setTitlebarAppearsTransparent:YES];
-        [nswindow setTitleVisibility:NSWindowTitleHidden];
-        [nswindow setStyleMask:[nswindow styleMask] | NSWindowStyleMaskFullSizeContentView];
+    printf("Force Dark Mode and Unified Title Bar...\n");
+    
+    SDL_SysWMinfo info;
+    SDL_VERSION(&info.version);
+    
+    if (SDL_GetWindowWMInfo(window, &info)) {
+        if (info.subsystem == SDL_SYSWM_COCOA) {
+            NSWindow *nswindow = info.info.cocoa.window;
+            if (nswindow) {
+                printf("NSWindow found via WMInfo. Applying styles.\n");
+                [nswindow setAppearance:[NSAppearance appearanceNamed:NSAppearanceNameDarkAqua]];
+                
+                NSUInteger mask = [nswindow styleMask];
+                mask |= NSWindowStyleMaskTitled; 
+                mask |= NSWindowStyleMaskFullSizeContentView;
+                [nswindow setStyleMask:mask];
+                
+                [nswindow setTitlebarAppearsTransparent:YES];
+                [nswindow setTitleVisibility:NSWindowTitleHidden];
+            } else {
+                 printf("ERROR: Cocoa Window is NULL.\n");
+            }
+        } else {
+            printf("ERROR: Subsystem is not Cocoa.\n");
+        }
+    } else {
+        printf("ERROR: SDL_GetWindowWMInfo failed: %s\n", SDL_GetError());
     }
 
     printf("Creating Renderer...\n");
@@ -42,6 +63,7 @@ int main(int argc, char* args[]) {
     app.ctx = fz_new_context(NULL, NULL, FZ_STORE_DEFAULT);
     app.renderer = renderer;
     app.zoom = 1.0f;
+    app.pdf_dark_mode = true; // Default to Dark Mode
     
     printf("Loading Font...\n");
     // Load System Font

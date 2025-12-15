@@ -44,15 +44,18 @@ static MenuHandler* g_menuHandler = NULL;
 }
 
 - (void)toggleTheme:(id)sender {
-    // Toggle Window Appearance (Dark/Light) independent of background
-    NSAppearance *current = [NSApp appearance];
-    NSString *name = [current name];
-    
-    // Note: NSAppearanceNameDarkAqua is available 10.14+
-    if ([name containsString:@"Dark"]) {
-        [NSApp setAppearance:[NSAppearance appearanceNamed:NSAppearanceNameAqua]];
-    } else {
-        [NSApp setAppearance:[NSAppearance appearanceNamed:NSAppearanceNameDarkAqua]];
+    if (g_app) {
+        g_app->pdf_dark_mode = !g_app->pdf_dark_mode;
+        
+        // We MUST clear the cache because the textures are baked with the color setting
+        clear_texture_cache(g_app);
+        
+        // Also toggle background default?
+        // User said: "just make it enable and disable dark mode for the PDF"
+        // But usually "Dark Mode" implies dark background too.
+        // Let's stick to JUST PDF for now as explicitly requested, 
+        // OR we can swap the background if it's currently one of the known defaults.
+        // For simplicity: Just PDF.
     }
 }
 @end

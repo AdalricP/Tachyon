@@ -22,6 +22,7 @@ typedef struct {
     int page_count;
     // Theme
     SDL_Color bg_color;
+    bool pdf_dark_mode;
     
     float scroll_y;
     float scroll_x;       
@@ -65,6 +66,7 @@ void load_document(AppState* app, const char* path);
 void render(AppState* app);
 void calculate_layout(AppState* app);
 void clear_cache(AppState* app);
+void clear_texture_cache(AppState* app);
 void set_zoom(AppState* app, float new_zoom, int center_x, int center_y);
 void draw_scrollbar(AppState* app);
 void show_overlay(AppState* app, const char* text);

@@ -70,12 +70,8 @@ SDL_Texture* render_page_to_texture(AppState* app, int page_num) {
     fz_pixmap* pix = fz_new_pixmap_from_page_number(app->ctx, app->doc, page_num, transform, fz_device_rgb(app->ctx), 0);
     fz_drop_page(app->ctx, page);
 
-    // Invert Colors only if Background is Dark
-    // Calculate brightness of BG
-    int bg_brightness = (app->bg_color.r + app->bg_color.g + app->bg_color.b) / 3;
-    bool dark_mode = (bg_brightness < 128); // Threshold
-
-    if (dark_mode) {
+    // Invert Colors only if PDF Dark Mode is active
+    if (app->pdf_dark_mode) {
         unsigned char* samples = fz_pixmap_samples(app->ctx, pix);
         int w = fz_pixmap_width(app->ctx, pix);
         int h = fz_pixmap_height(app->ctx, pix);
@@ -109,7 +105,17 @@ SDL_Texture* render_page_to_texture(AppState* app, int page_num) {
     return texture;
 }
 
+void clear_texture_cache(AppState* app) {
+    for (int i = 0; i < app->page_count; i++) {
+        if (app->page_textures[i]) {
+            SDL_DestroyTexture(app->page_textures[i]);
+            app->page_textures[i] = NULL;
+        }
+    }
+}
+
 void render(AppState* app) {
+// ... existing render code ...
     // --- Background Gradient ---
     int win_w, win_h;
     SDL_GetRendererOutputSize(app->renderer, &win_w, &win_h);
