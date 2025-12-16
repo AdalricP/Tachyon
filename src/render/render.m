@@ -229,10 +229,7 @@ void render(AppState* app) {
         
         if (visible_y && has_texture) {
             SDL_FRect dest;
-            dest.x = (float)((view_width - expected_w) / 2);
-            if (expected_w > view_width) {
-                dest.x -= view_left;
-            }
+            dest.x = (float)((view_width - expected_w) / 2) - view_left;
             dest.y = current_y - view_top;
             dest.w = (float)expected_w;
             dest.h = (float)page_h;
@@ -297,6 +294,4 @@ void render(AppState* app) {
     }
     
     draw_scrollbar(app);
-    
-    SDL_RenderPresent(app->renderer);
 }

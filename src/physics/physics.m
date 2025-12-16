@@ -103,20 +103,23 @@ void update_physics(AppState* app, float dt) {
         app->velocity_y = 0;
     }
     
-    if (app->max_width <= win_w) {
-        app->scroll_x = 0;
-        app->velocity_x = 0;
-    } else {
-        int overflow = app->max_width - win_w;
-        
-        int limit = overflow / 2;
-        if (app->scroll_x < -limit) {
-            app->scroll_x = -limit;
+    bool rsvp_active = (app->rsvp && app->rsvp->active);
+    
+    if (!rsvp_active) {
+        if (app->max_width <= win_w) {
+            app->scroll_x = 0;
             app->velocity_x = 0;
-        }
-        if (app->scroll_x > limit) {
-            app->scroll_x = limit;
-            app->velocity_x = 0;
+        } else {
+            int overflow = app->max_width - win_w;
+            int limit = overflow / 2;
+            if (app->scroll_x < -limit) {
+                app->scroll_x = -limit;
+                app->velocity_x = 0;
+            }
+            if (app->scroll_x > limit) {
+                app->scroll_x = limit;
+                app->velocity_x = 0;
+            }
         }
     }
     

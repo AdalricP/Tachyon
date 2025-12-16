@@ -70,6 +70,23 @@ typedef struct {
     fz_point drag_end;
     int sel_start_page;
     int sel_end_page;
+    
+    // RSVP Speedread
+    struct {
+        char** words;
+        int* word_pages;
+        fz_point* word_start;
+        fz_point* word_end;
+        int word_count;
+        int current_index;
+        int wpm;
+        int chunk_size;
+        bool paused;
+        Uint32 last_advance_time;
+        bool active;
+        int first_content_page;
+        int highlight_color_index;
+    }* rsvp;
 } AppState;
 
 extern AppState* g_app;

@@ -6,6 +6,7 @@
 #include "../ui/ui.h"
 #include "../io/file.h"
 #include "../text_selection.h"
+#include "../rsvp/rsvp.h"
 #include <SDL_syswm.h>
 
 AppState* g_app = NULL;
@@ -83,6 +84,7 @@ int main(int argc, char* args[]) {
     printf("Init App Delegate...\n");
     init_app_delegate();
     init_text_selection(&app);
+    init_rsvp(&app);
     printf("Setup Menu...\n");
     setup_menu();
     [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
@@ -152,46 +154,66 @@ int main(int argc, char* args[]) {
                  if (e.button.button == SDL_BUTTON_LEFT) {
                      handle_mouse_up(&app, e.button.x, e.button.y);
                  }
-            } else if (e.type == SDL_KEYDOWN) {
+             } else if (e.type == SDL_KEYDOWN) {
                 bool cmd = (SDL_GetModState() & KMOD_GUI) != 0;
+                SDL_Keycode key = e.key.keysym.sym;
                 
-                switch(e.key.keysym.sym) {
-                    case SDLK_UP: app.velocity_y -= 800.0f; break; 
-                    case SDLK_DOWN: app.velocity_y += 800.0f; break;
-                    case SDLK_LEFT: app.velocity_x -= 800.0f; break;
-                    case SDLK_RIGHT: app.velocity_x += 800.0f; break;
-                    case SDLK_ESCAPE: quit = true; break;
-                    case SDLK_c:
-                        if (cmd) {
-                            copy_selected_text(&app);
-                        }
-                        break;
-                    case SDLK_EQUALS: 
-                    case SDLK_PLUS:
-                        if (cmd) {
-                            app.zoom_velocity += 2.0f; 
-                        }
-                        break;
-                    case SDLK_MINUS: 
-                        if (cmd) {
-                            app.zoom_velocity -= 2.0f;
-                        }
-                        break;
-                    case SDLK_0: 
-                        if (cmd) {
-                            app.zoom_velocity = 0;
-                            set_zoom(&app, 1.0f, win_w / 2, win_h / 2);
-                        }
-                        break;
+                if (app.rsvp && app.rsvp->active) {
+                    if (key == SDLK_s) {
+                        toggle_rsvp_mode(&app);
+                    } else {
+                        rsvp_handle_key(&app, key, cmd);
+                    }
+                } else {
+                    switch(key) {
+                        case SDLK_UP: app.velocity_y -= 800.0f; break; 
+                        case SDLK_DOWN: app.velocity_y += 800.0f; break;
+                        case SDLK_LEFT: app.velocity_x -= 800.0f; break;
+                        case SDLK_RIGHT: app.velocity_x += 800.0f; break;
+                        case SDLK_ESCAPE: quit = true; break;
+                        case SDLK_c:
+                            if (cmd) copy_selected_text(&app);
+                            break;
+                        case SDLK_EQUALS: 
+                        case SDLK_PLUS:
+                            if (cmd) app.zoom_velocity += 2.0f; 
+                            break;
+                        case SDLK_MINUS: 
+                            if (cmd) app.zoom_velocity -= 2.0f;
+                            break;
+                        case SDLK_0: 
+                            if (cmd) {
+                                app.zoom_velocity = 0;
+                                set_zoom(&app, 1.0f, win_w / 2, win_h / 2);
+                            }
+                            break;
+                        case SDLK_s:
+                            if (app.doc) toggle_rsvp_mode(&app);
+                            break;
+                        default:
+                            break;
+                    }
                 }
             }
         }
         
         update_physics(&app, dt);
+        
+        if (app.rsvp && app.rsvp->active) {
+            rsvp_update(&app, dt);
+        }
+        
         render(&app);
+        
+        if (app.rsvp && app.rsvp->active) {
+            rsvp_render(&app);
+        }
+        
+        SDL_RenderPresent(app.renderer);
     }
     
     shutdown_async_renderer();
+    cleanup_rsvp(&app);
     clear_cache(&app);
     cleanup_text_selection(&app);
     if (app.overlay_texture) SDL_DestroyTexture(app.overlay_texture);
