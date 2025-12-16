@@ -1,5 +1,9 @@
 #include "render.h"
+#include "render.h"
+#include "render_async.h"
 #include "../ui/ui.h"
+#include "../text_selection.h"
+#include <math.h>
 
 void calculate_layout(AppState* app) {
     if (!app->doc) return;
@@ -148,6 +152,29 @@ void render(AppState* app) {
         return;
     }
     
+    RenderResult* result;
+    while ((result = poll_completed_render()) != NULL) {
+        if (result->page_num >= 0 && result->page_num < app->page_count) {
+            if (app->page_textures[result->page_num]) {
+                SDL_DestroyTexture(app->page_textures[result->page_num]);
+            }
+            
+            SDL_Surface* surf = SDL_CreateRGBSurfaceFrom(
+                result->pixels,
+                result->width,
+                result->height,
+                24,
+                result->stride,
+                0x000000FF, 0x0000FF00, 0x00FF0000, 0
+            );
+            
+            app->page_textures[result->page_num] = SDL_CreateTextureFromSurface(app->renderer, surf);
+            app->texture_zoom[result->page_num] = app->zoom;
+            SDL_FreeSurface(surf);
+        }
+        free_render_result(result);
+    }
+    
     float current_y = 0.0f; 
     int view_h = win_h;
     float view_top = app->scroll_y;
@@ -166,59 +193,51 @@ void render(AppState* app) {
         temp_y += page_h + PAGE_GAP;
     }
 
-    int buffer_range = 3;
+    int buffer_range = 2;
     int load_start = current_page_index - buffer_range;
     int load_end = current_page_index + buffer_range;
-
-    int pages_uploaded_this_frame = 0;
-    int max_background_uploads = 1;
+    if (load_start < 0) load_start = 0;
+    if (load_end >= app->page_count) load_end = app->page_count - 1;
+    
+    int renders_this_frame = 0;
+    int max_renders_per_frame = 1;
     
     current_y = 0.0f; 
     for (int i = 0; i < app->page_count; i++) {
         int page_h = app->page_heights[i];
+        float page_w_points = app->orig_widths[i];
+        float base_scale = (float)(win_w - 40) / page_w_points;
+        int expected_w = (int)(page_w_points * base_scale * app->zoom);
         
         bool visible_y = (current_y + page_h + PAGE_GAP > view_top - buffer_y && current_y < view_top + view_h + buffer_y);
         bool in_buffer = (i >= load_start && i <= load_end);
-
-        bool should_retain = (visible_y || in_buffer);
+        bool should_load = in_buffer && renders_this_frame < max_renders_per_frame;
         
-        if (should_retain) {
-            if (!app->page_textures[i]) {
-                bool force_load = visible_y;
-                bool background_load = in_buffer && !visible_y && (pages_uploaded_this_frame < max_background_uploads);
-                
-                if (force_load || background_load) {
-                    app->page_textures[i] = render_page_to_texture(app, i);
-                    if (!force_load) {
-                        pages_uploaded_this_frame++;
-                    }
-                }
+        bool has_texture = app->page_textures[i] != NULL;
+        bool is_stale = has_texture && (fabsf(app->texture_zoom[i] - app->zoom) > 0.01f);
+        bool needs_render = (!has_texture || is_stale) && !is_page_render_pending(i);
+        
+        if (should_load && needs_render) {
+            request_page_render(app, i, base_scale);
+            renders_this_frame++;
+        }
+        
+        if (!in_buffer && !visible_y && has_texture) {
+            SDL_DestroyTexture(app->page_textures[i]);
+            app->page_textures[i] = NULL;
+        }
+        
+        if (visible_y && has_texture) {
+            SDL_FRect dest;
+            dest.x = (float)((view_width - expected_w) / 2);
+            if (expected_w > view_width) {
+                dest.x -= view_left;
             }
+            dest.y = current_y - view_top;
+            dest.w = (float)expected_w;
+            dest.h = (float)page_h;
             
-            if (visible_y && app->page_textures[i]) {
-                int w, h;
-                SDL_QueryTexture(app->page_textures[i], NULL, NULL, &w, &h);
-                
-                float x_pos;
-                if (w < view_width) {
-                    x_pos = (float)((view_width - w) / 2); 
-                } else {
-                    x_pos = (float)((view_width - w) / 2) - view_left;
-                }
-                
-                SDL_FRect dest;
-                dest.x = x_pos;
-                dest.y = current_y - view_top; 
-                dest.w = (float)w;
-                dest.h = (float)h;
-                
-                SDL_RenderCopyF(app->renderer, app->page_textures[i], NULL, &dest);
-            }
-        } else {
-            if (app->page_textures[i]) {
-                SDL_DestroyTexture(app->page_textures[i]);
-                app->page_textures[i] = NULL;
-            }
+            SDL_RenderCopyF(app->renderer, app->page_textures[i], NULL, &dest);
         }
         
         current_y += (float)(page_h + PAGE_GAP);
@@ -246,6 +265,9 @@ void render(AppState* app) {
     SDL_RenderGeometry(app->renderer, NULL, fade_bot, 4, indices, 6);
 
     static int last_page = -1;
+    
+    draw_selection_overlay(app);
+    
     if (current_page_index != -1 && current_page_index != last_page) {
         if (app->overlay_timer <= 0 || strncmp(app->overlay_text, "Zoom", 4) != 0) {
             char buf[64];

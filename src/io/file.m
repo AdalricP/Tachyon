@@ -1,5 +1,6 @@
 #include "file.h"
 #include "../render/render.h"
+#include "../text_selection.h"
 
 void clear_cache(AppState* app) {
     if (app->page_textures) {
@@ -11,6 +12,10 @@ void clear_cache(AppState* app) {
         }
         free(app->page_textures);
         app->page_textures = NULL;
+    }
+    if (app->texture_zoom) {
+        free(app->texture_zoom);
+        app->texture_zoom = NULL;
     }
     if (app->page_heights) {
         free(app->page_heights);
@@ -24,11 +29,20 @@ void clear_cache(AppState* app) {
         free(app->orig_heights);
         app->orig_heights = NULL;
     }
+    if (app->page_offsets_x) {
+        free(app->page_offsets_x);
+        app->page_offsets_x = NULL;
+    }
+    if (app->page_offsets_y) {
+        free(app->page_offsets_y);
+        app->page_offsets_y = NULL;
+    }
 }
 
 void load_document(AppState* app, const char* path) {
     if (app->doc) {
         clear_cache(app);
+        cleanup_text_selection(app);
         fz_drop_document(app->ctx, app->doc);
         app->doc = NULL;
     }
@@ -38,26 +52,32 @@ void load_document(AppState* app, const char* path) {
     fz_try(app->ctx) {
         app->doc = fz_open_document(app->ctx, path);
         app->page_count = fz_count_pages(app->ctx, app->doc);
+        init_text_selection(app);
         app->scroll_y = 0;
         app->scroll_x = 0;
         app->velocity_y = 0;
         app->velocity_x = 0;
         app->zoom = 0.5f;
         app->zoom_velocity = 0;
-        
-        printf("Opened: %s (%d pages)\n", path, app->page_count);
-        
-        
+        app->page_textures = (SDL_Texture**)calloc(app->page_count, sizeof(SDL_Texture*));
+        app->texture_zoom = (float*)calloc(app->page_count, sizeof(float));
+        app->page_heights = (int*)calloc(app->page_count, sizeof(int));
         app->orig_widths = (float*)calloc(app->page_count, sizeof(float));
         app->orig_heights = (float*)calloc(app->page_count, sizeof(float));
+        app->page_offsets_x = (float*)calloc(app->page_count, sizeof(float));
+        app->page_offsets_y = (float*)calloc(app->page_count, sizeof(float));
         
         for (int i = 0; i < app->page_count; i++) {
             fz_page* page = fz_load_page(app->ctx, app->doc, i);
             fz_rect bounds = fz_bound_page(app->ctx, page);
-            fz_drop_page(app->ctx, page);
             app->orig_widths[i] = bounds.x1 - bounds.x0;
             app->orig_heights[i] = bounds.y1 - bounds.y0;
+            app->page_offsets_x[i] = bounds.x0;
+            app->page_offsets_y[i] = bounds.y0;
+            fz_drop_page(app->ctx, page);
         }
+        
+        printf("Opened: %s (%d pages)\n", path, app->page_count);
         
         calculate_layout(app);
         

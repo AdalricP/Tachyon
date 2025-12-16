@@ -1,5 +1,6 @@
 #include "physics.h"
 #include "../render/render.h"
+#include "../render/render_async.h"
 #include <math.h>
 #include <stdio.h>
 
@@ -20,14 +21,7 @@ void set_zoom(AppState* app, float new_zoom, int center_x, int center_y) {
     
     app->scroll_x *= zoom_ratio;
     
-    if (app->page_textures) {
-        for (int i = 0; i < app->page_count; i++) {
-            if (app->page_textures[i]) {
-                SDL_DestroyTexture(app->page_textures[i]);
-                app->page_textures[i] = NULL;
-            }
-        }
-    }
+    cancel_all_renders();
     
     calculate_layout(app);
     

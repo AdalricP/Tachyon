@@ -1,9 +1,11 @@
 #include "types.h"
 #include "constants.h"
 #include "../render/render.h"
+#include "../render/render_async.h"
 #include "../physics/physics.h"
 #include "../ui/ui.h"
 #include "../io/file.h"
+#include "../text_selection.h"
 #include <SDL_syswm.h>
 
 AppState* g_app = NULL;
@@ -75,10 +77,12 @@ int main(int argc, char* args[]) {
     }
     
     fz_register_document_handlers(app.ctx);
-    g_app = &app; 
+    g_app = &app;
+    init_async_renderer(&app); 
 
     printf("Init App Delegate...\n");
     init_app_delegate();
+    init_text_selection(&app);
     printf("Setup Menu...\n");
     setup_menu();
     [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
@@ -135,6 +139,19 @@ int main(int argc, char* args[]) {
                         }
                     } 
                 }
+            } else if (e.type == SDL_MOUSEBUTTONDOWN) {
+                 if (e.button.button == SDL_BUTTON_LEFT) {
+                     handle_mouse_down(&app, e.button.x, e.button.y);
+                 }
+            } else if (e.type == SDL_MOUSEMOTION) {
+                 update_cursor_for_position(&app, e.motion.x, e.motion.y);
+                 if (e.motion.state & SDL_BUTTON_LMASK) {
+                     handle_mouse_drag(&app, e.motion.x, e.motion.y);
+                 }
+            } else if (e.type == SDL_MOUSEBUTTONUP) {
+                 if (e.button.button == SDL_BUTTON_LEFT) {
+                     handle_mouse_up(&app, e.button.x, e.button.y);
+                 }
             } else if (e.type == SDL_KEYDOWN) {
                 bool cmd = (SDL_GetModState() & KMOD_GUI) != 0;
                 
@@ -144,6 +161,11 @@ int main(int argc, char* args[]) {
                     case SDLK_LEFT: app.velocity_x -= 800.0f; break;
                     case SDLK_RIGHT: app.velocity_x += 800.0f; break;
                     case SDLK_ESCAPE: quit = true; break;
+                    case SDLK_c:
+                        if (cmd) {
+                            copy_selected_text(&app);
+                        }
+                        break;
                     case SDLK_EQUALS: 
                     case SDLK_PLUS:
                         if (cmd) {
@@ -169,7 +191,9 @@ int main(int argc, char* args[]) {
         render(&app);
     }
     
+    shutdown_async_renderer();
     clear_cache(&app);
+    cleanup_text_selection(&app);
     if (app.overlay_texture) SDL_DestroyTexture(app.overlay_texture);
     if (app.font) TTF_CloseFont(app.font);
     
