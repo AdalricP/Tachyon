@@ -1,4 +1,5 @@
-#include "tachyon.h"
+#include "physics.h"
+#include "../render/render.h"
 #include <math.h>
 #include <stdio.h>
 
@@ -11,18 +12,11 @@ void set_zoom(AppState* app, float new_zoom, int center_x, int center_y) {
     float old_zoom = app->zoom;
     app->zoom = new_zoom;
     
-    
     float zoom_ratio = new_zoom / old_zoom;
     float center_view_y = (float)center_y; 
     float doc_y = app->scroll_y + center_view_y;
     float new_doc_y = doc_y * zoom_ratio;
     app->scroll_y = new_doc_y - center_view_y;
-    
-    
-    
-    
-    
-    
     
     app->scroll_x *= zoom_ratio;
     
@@ -48,7 +42,6 @@ void update_physics(AppState* app, float dt) {
     int win_w, win_h;
     SDL_GetRendererOutputSize(app->renderer, &win_w, &win_h);
     
-    
     if (fabsf(app->velocity_y) > 0.1f) {
         app->scroll_y += app->velocity_y * dt;
         
@@ -65,7 +58,6 @@ void update_physics(AppState* app, float dt) {
         if (app->velocity_y < -10000.0f) app->velocity_y = -10000.0f;
     }
     
-    
     if (fabsf(app->velocity_x) > 0.1f) {
         app->scroll_x += app->velocity_x * dt;
         
@@ -79,7 +71,6 @@ void update_physics(AppState* app, float dt) {
         
         if (fabsf(app->velocity_x) < 1.0f) app->velocity_x = 0;
     }
-    
     
     if (fabsf(app->zoom_velocity) > 0.01f) {
         float new_zoom = app->zoom + app->zoom_velocity * dt;
@@ -106,9 +97,6 @@ void update_physics(AppState* app, float dt) {
         if (fabsf(app->zoom_velocity) < 0.1f) app->zoom_velocity = 0;
     }
 
-    
-    
-    
     int max_scroll_y = app->total_height - win_h;
     if (max_scroll_y < 0) max_scroll_y = 0;
     
@@ -120,14 +108,6 @@ void update_physics(AppState* app, float dt) {
         app->scroll_y = max_scroll_y;
         app->velocity_y = 0;
     }
-    
-    
-    
-    
-    
-    
-    
-    
     
     if (app->max_width <= win_w) {
         app->scroll_x = 0;
@@ -146,13 +126,11 @@ void update_physics(AppState* app, float dt) {
         }
     }
     
-    
     if (app->overlay_timer > 0) {
         app->overlay_timer -= dt;
         if (app->overlay_timer < 0) app->overlay_timer = 0;
     }
     
-    // Scrollbar Physics
     if (fabsf(app->velocity_y) > 0.1f || fabsf(app->velocity_x) > 0.1f) {
         app->scrollbar_alpha = 1.0f;
     } else {

@@ -1,4 +1,9 @@
-#include "tachyon.h"
+#include "types.h"
+#include "constants.h"
+#include "../render/render.h"
+#include "../physics/physics.h"
+#include "../ui/ui.h"
+#include "../io/file.h"
 #include <SDL_syswm.h>
 
 AppState* g_app = NULL;
@@ -16,7 +21,6 @@ int main(int argc, char* args[]) {
     }
     
     printf("Creating Window...\n");
-    // Create Window
     SDL_Window* window = SDL_CreateWindow("Tachyon", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 
                                           SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_RESIZABLE);
     if (!window) return 1;
@@ -51,7 +55,6 @@ int main(int argc, char* args[]) {
     }
 
     printf("Creating Renderer...\n");
-    // Create Accelerated Renderer
     SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     if (!renderer) {
         printf("Renderer Init Error: %s\n", SDL_GetError());
@@ -63,10 +66,9 @@ int main(int argc, char* args[]) {
     app.ctx = fz_new_context(NULL, NULL, FZ_STORE_DEFAULT);
     app.renderer = renderer;
     app.zoom = 1.0f;
-    app.pdf_dark_mode = true; // Default to Dark Mode
+    app.pdf_dark_mode = true; 
     
     printf("Loading Font...\n");
-    // Load System Font
     app.font = TTF_OpenFont("/System/Library/Fonts/Helvetica.ttc", 24);
     if (!app.font) {
          printf("Failed to load font: %s\n", TTF_GetError());
@@ -119,25 +121,15 @@ int main(int argc, char* args[]) {
                     bool shift = (SDL_GetModState() & KMOD_SHIFT) != 0;
                     
                     if (cmd) {
-                         
                         app.zoom_velocity += e.wheel.y * ZOOM_SENSITIVITY * 20.0f;
                     } else {
-                        
-                        
                         app.velocity_y -= e.wheel.y * SCROLL_SENSITIVITY * 15.0f;
                         
-                        
                         if (shift || e.wheel.x != 0) {
-                             
-                             
-                             
-                             
                              if (e.wheel.x != 0) {
                                   app.velocity_x += e.wheel.x * SCROLL_SENSITIVITY * 15.0f; 
                              } else if (shift && e.wheel.y != 0) {
-                                  
                                   app.velocity_x += e.wheel.y * SCROLL_SENSITIVITY * 15.0f;
-                                  
                                   app.velocity_y += e.wheel.y * SCROLL_SENSITIVITY * 15.0f; 
                              }
                         }

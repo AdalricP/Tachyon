@@ -1,5 +1,5 @@
-#ifndef TACHYON_H
-#define TACHYON_H
+#ifndef TYPES_H
+#define TYPES_H
 
 #import <Cocoa/Cocoa.h>
 #include <SDL.h>
@@ -7,20 +7,11 @@
 #include <mupdf/fitz.h>
 #include <stdbool.h>
 
-#define SCREEN_WIDTH 1280
-#define SCREEN_HEIGHT 720
-#define PAGE_GAP 20
-#define FRICTION_DAMPING 10.0f
-#define SCROLL_SENSITIVITY 120.0f
-#define ZOOM_MIN 0.25f
-#define ZOOM_MAX 2.0f
-#define ZOOM_SENSITIVITY 0.05f
-
 typedef struct {
     fz_context* ctx;
     fz_document* doc;
     int page_count;
-    // Theme
+    
     SDL_Color bg_color;
     bool pdf_dark_mode;
     
@@ -54,22 +45,5 @@ typedef struct {
 } AppState;
 
 extern AppState* g_app;
-
-// Objective-C Classes
-@interface MenuHandler : NSObject
-@end
-
-// Function Prototypes
-void setup_menu(void);
-void init_app_delegate(void); 
-void load_document(AppState* app, const char* path);
-void render(AppState* app);
-void calculate_layout(AppState* app);
-void clear_cache(AppState* app);
-void clear_texture_cache(AppState* app);
-void set_zoom(AppState* app, float new_zoom, int center_x, int center_y);
-void draw_scrollbar(AppState* app);
-void show_overlay(AppState* app, const char* text);
-void update_physics(AppState* app, float dt);
 
 #endif

@@ -1,0 +1,13 @@
+#ifndef CONSTANTS_H
+#define CONSTANTS_H
+
+#define SCREEN_WIDTH 1280
+#define SCREEN_HEIGHT 720
+#define PAGE_GAP 20
+#define FRICTION_DAMPING 10.0f
+#define SCROLL_SENSITIVITY 120.0f
+#define ZOOM_MIN 0.25f
+#define ZOOM_MAX 2.0f
+#define ZOOM_SENSITIVITY 0.05f
+
+#endif

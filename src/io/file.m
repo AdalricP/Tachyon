@@ -1,4 +1,5 @@
-#include "tachyon.h"
+#include "file.h"
+#include "../render/render.h"
 
 void clear_cache(AppState* app) {
     if (app->page_textures) {
