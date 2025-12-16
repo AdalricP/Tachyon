@@ -190,6 +190,31 @@ int main(int argc, char* args[]) {
                         case SDLK_s:
                             if (app.doc) toggle_rsvp_mode(&app);
                             break;
+                        case SDLK_o:
+                            if (cmd) {
+                                NSOpenPanel* panel = [NSOpenPanel openPanel];
+                                [panel setCanChooseFiles:YES];
+                                [panel setCanChooseDirectories:NO];
+                                #pragma clang diagnostic push
+                                #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+                                [panel setAllowedFileTypes:@[@"pdf"]];
+                                #pragma clang diagnostic pop
+                                if ([panel runModal] == NSModalResponseOK) {
+                                    NSURL* url = [panel URL];
+                                    load_document(&app, [[url path] UTF8String]);
+                                }
+                            }
+                            break;
+                        case SDLK_f:
+                            if (cmd) {
+                                Uint32 flags = SDL_GetWindowFlags(window);
+                                if (flags & SDL_WINDOW_FULLSCREEN_DESKTOP) {
+                                    SDL_SetWindowFullscreen(window, 0);
+                                } else {
+                                    SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN_DESKTOP);
+                                }
+                            }
+                            break;
                         default:
                             break;
                     }

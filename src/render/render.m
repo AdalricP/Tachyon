@@ -160,7 +160,49 @@ void render(AppState* app) {
     SDL_RenderGeometry(app->renderer, NULL, verts, 4, indices, 6);
 
     if (!app->doc) {
-        SDL_RenderPresent(app->renderer);
+        if (app->font) {
+            int center_x = win_w / 2;
+            int center_y = win_h / 2;
+            
+            TTF_SetFontSize(app->font, 48);
+            SDL_Color title_col = {80, 80, 80, 255};
+            SDL_Surface* title_surf = TTF_RenderText_Blended(app->font, "Tachyon", title_col);
+            if (title_surf) {
+                SDL_Texture* title_tex = SDL_CreateTextureFromSurface(app->renderer, title_surf);
+                SDL_Rect title_dst = {center_x - title_surf->w / 2, center_y - 80, title_surf->w, title_surf->h};
+                SDL_RenderCopy(app->renderer, title_tex, NULL, &title_dst);
+                SDL_DestroyTexture(title_tex);
+                SDL_FreeSurface(title_surf);
+            }
+            
+            TTF_SetFontSize(app->font, 14);
+            SDL_Color sub_col = {120, 120, 120, 255};
+            SDL_Surface* sub_surf = TTF_RenderText_Blended(app->font, "Press Cmd+O to open a PDF", sub_col);
+            if (sub_surf) {
+                SDL_Texture* sub_tex = SDL_CreateTextureFromSurface(app->renderer, sub_surf);
+                SDL_Rect sub_dst = {center_x - sub_surf->w / 2, center_y, sub_surf->w, sub_surf->h};
+                SDL_RenderCopy(app->renderer, sub_tex, NULL, &sub_dst);
+                SDL_DestroyTexture(sub_tex);
+                SDL_FreeSurface(sub_surf);
+            }
+            
+            TTF_SetFontSize(app->font, 12);
+            SDL_Color hint_col = {100, 100, 100, 255};
+            const char* hints[] = {"Cmd+O  Open", "Cmd+F  Fullscreen"};
+            for (int i = 0; i < 2; i++) {
+                SDL_Surface* hint_surf = TTF_RenderText_Blended(app->font, hints[i], hint_col);
+                if (hint_surf) {
+                    SDL_Texture* hint_tex = SDL_CreateTextureFromSurface(app->renderer, hint_surf);
+                    int hint_x = center_x - 100 + i * 130;
+                    SDL_Rect hint_dst = {hint_x, center_y + 50, hint_surf->w, hint_surf->h};
+                    SDL_RenderCopy(app->renderer, hint_tex, NULL, &hint_dst);
+                    SDL_DestroyTexture(hint_tex);
+                    SDL_FreeSurface(hint_surf);
+                }
+            }
+            
+            TTF_SetFontSize(app->font, 24);
+        }
         return;
     }
     
