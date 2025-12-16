@@ -124,17 +124,29 @@ void render(AppState* app) {
     SDL_Color top_col = app->bg_color;
     SDL_Color bot_col = app->bg_color;
     
-    int brightness = (app->bg_color.r + app->bg_color.g + app->bg_color.b) / 3;
-    float mix_factor = 0.4f; 
+    bool rsvp_active = (app->rsvp && app->rsvp->active);
     
-    if (brightness < 128) {
-        top_col.r = (Uint8)((int)top_col.r * (1.0f - mix_factor) + 50 * mix_factor);
-        top_col.g = (Uint8)((int)top_col.g * (1.0f - mix_factor) + 50 * mix_factor);
-        top_col.b = (Uint8)((int)top_col.b * (1.0f - mix_factor) + 50 * mix_factor);
+    if (rsvp_active) {
+        if (app->pdf_dark_mode) {
+            top_col = (SDL_Color){0, 0, 0, 255};
+            bot_col = (SDL_Color){0, 0, 0, 255};
+        } else {
+            top_col = (SDL_Color){255, 255, 255, 255};
+            bot_col = (SDL_Color){255, 255, 255, 255};
+        }
     } else {
-        top_col.r = (Uint8)((int)top_col.r * (1.0f - mix_factor) + 255 * mix_factor);
-        top_col.g = (Uint8)((int)top_col.g * (1.0f - mix_factor) + 255 * mix_factor);
-        top_col.b = (Uint8)((int)top_col.b * (1.0f - mix_factor) + 255 * mix_factor);
+        int brightness = (app->bg_color.r + app->bg_color.g + app->bg_color.b) / 3;
+        float mix_factor = 0.4f; 
+        
+        if (brightness < 128) {
+            top_col.r = (Uint8)((int)top_col.r * (1.0f - mix_factor) + 50 * mix_factor);
+            top_col.g = (Uint8)((int)top_col.g * (1.0f - mix_factor) + 50 * mix_factor);
+            top_col.b = (Uint8)((int)top_col.b * (1.0f - mix_factor) + 50 * mix_factor);
+        } else {
+            top_col.r = (Uint8)((int)top_col.r * (1.0f - mix_factor) + 255 * mix_factor);
+            top_col.g = (Uint8)((int)top_col.g * (1.0f - mix_factor) + 255 * mix_factor);
+            top_col.b = (Uint8)((int)top_col.b * (1.0f - mix_factor) + 255 * mix_factor);
+        }
     }
 
     SDL_Vertex verts[4] = {

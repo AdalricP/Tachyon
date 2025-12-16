@@ -182,6 +182,7 @@ void init_rsvp(AppState* app) {
     app->rsvp->chunk_size = 1;
     app->rsvp->paused = true;
     app->rsvp->highlight_color_index = 0;
+    app->rsvp->overlay_alpha = 160;
 }
 
 void cleanup_rsvp(AppState* app) {
@@ -264,8 +265,8 @@ void rsvp_update(AppState* app, float dt) {
     }
     target_scroll_y += y_start * final_scale - win_h / 2;
     
-    app->scroll_y += (target_scroll_y - app->scroll_y) * 0.15f;
-    app->scroll_x += (target_scroll_x - app->scroll_x) * 0.15f;
+    app->scroll_y = target_scroll_y;
+    app->scroll_x = target_scroll_x;
     app->velocity_y = 0;
     app->velocity_x = 0;
     
@@ -318,7 +319,11 @@ void rsvp_render(AppState* app) {
     float highlight_w = (end.x - start.x) * final_scale + 8;
     float highlight_h = text_height + 6;
     
-    SDL_SetRenderDrawColor(app->renderer, 0, 0, 0, 160);
+    if (app->pdf_dark_mode) {
+        SDL_SetRenderDrawColor(app->renderer, 0, 0, 0, app->rsvp->overlay_alpha);
+    } else {
+        SDL_SetRenderDrawColor(app->renderer, 255, 255, 255, app->rsvp->overlay_alpha);
+    }
     SDL_Rect top_overlay = {0, 0, win_w, (int)highlight_y};
     SDL_Rect bot_overlay = {0, (int)(highlight_y + highlight_h), win_w, win_h - (int)(highlight_y + highlight_h)};
     SDL_Rect left_overlay = {0, (int)highlight_y, (int)highlight_x, (int)highlight_h};
@@ -330,9 +335,9 @@ void rsvp_render(AppState* app) {
     
     SDL_Color col;
     if (app->pdf_dark_mode) {
-        col = (SDL_Color){255, 255, 255, 100};
+        col = (SDL_Color){255, 220, 50, 120};
     } else {
-        col = (SDL_Color){255, 255, 255, 100};
+        col = (SDL_Color){255, 220, 50, 120};
     }
     SDL_SetRenderDrawColor(app->renderer, col.r, col.g, col.b, col.a);
     SDL_Rect highlight = {(int)highlight_x, (int)highlight_y, (int)highlight_w, (int)highlight_h};
@@ -441,6 +446,15 @@ void rsvp_handle_key(AppState* app, SDL_Keycode key, bool cmd) {
             if (cmd) {
                 app->rsvp->highlight_color_index = (app->rsvp->highlight_color_index + 1) % NUM_HIGHLIGHT_COLORS;
             }
+            break;
+        
+        case SDLK_LEFTBRACKET:
+            app->rsvp->overlay_alpha -= 20;
+            if (app->rsvp->overlay_alpha < 0) app->rsvp->overlay_alpha = 0;
+            break;
+        case SDLK_RIGHTBRACKET:
+            app->rsvp->overlay_alpha += 20;
+            if (app->rsvp->overlay_alpha > 255) app->rsvp->overlay_alpha = 255;
             break;
     }
 }

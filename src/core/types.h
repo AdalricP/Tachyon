@@ -86,6 +86,7 @@ typedef struct {
         bool active;
         int first_content_page;
         int highlight_color_index;
+        int overlay_alpha;
     }* rsvp;
 } AppState;
 
